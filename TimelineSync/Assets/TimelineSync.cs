@@ -26,22 +26,22 @@ public class TimelineSync : NetworkBehaviour
         }
 
         // Network start options
-        if (isServer) return; // If already a server, skip the startup options
+        if (isServer) return;
 
         if (startAsServer)
         {
             NetworkManager.singleton.StartServer();
-            Debug.Log("Started as Server");
+            Debug.Log("Server started");
         }
         else if (startAsHost)
         {
             NetworkManager.singleton.StartHost();
-            Debug.Log("Started as Host");
+            Debug.Log("Host started");
         }
         else if (startAsClient)
         {
-            NetworkManager.singleton.StartClient();  // クライアントとして起動
-            Debug.Log("Started as Client");
+            NetworkManager.singleton.StartClient();
+            Debug.Log("Client started");
         }
     }
 
@@ -53,35 +53,19 @@ public class TimelineSync : NetworkBehaviour
         {
             if (Time.time >= nextSyncTime)
             {
-                nextSyncTime = Time.time + timelineSyncInterval;  // 名前を変更
-                Debug.Log("Server: Sending sync signal.");  // サーバーとして同期信号を送信した時のログ
+                nextSyncTime = Time.time + timelineSyncInterval;
                 RpcSyncTimelinePosition((float)director.time);
-            }
-        }
-        else if (startAsClient)
-        {
-            // For clients, always sync at regular intervals
-            if (Time.time >= nextSyncTime)
-            {
-                nextSyncTime = Time.time + timelineSyncInterval;  // 名前を変更
-                CmdSyncTimelinePosition((float)director.time);
+                Debug.Log("Timeline position synced to clients");
             }
         }
     }
 
-
-    // Commands (Client -> Server)
-    [Command]
-    private void CmdSyncTimelinePosition(float time)
-    {
-        RpcSyncTimelinePosition(time);
-    }
 
     // RPCs (Server -> Clients)
     [ClientRpc]
     public void RpcSyncTimelinePosition(float time)
     {
-        Debug.Log("Client: Received sync signal.");  // クライアントとして同期信号を受信した時のログ
         director.time = time;
+        Debug.Log("Timeline position synced from server");
     }
 }
