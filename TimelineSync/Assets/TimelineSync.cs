@@ -6,11 +6,12 @@ public class TimelineSync : NetworkBehaviour
 {
     [Header("Settings")]
     public PlayableDirector director;
-    public float timelineSyncInterval = 0.5f;  // 名前を変更
+    public float timelineSyncInterval = 0.5f;
 
     [Header("Startup Options")]
     public bool startAsServer;
     public bool startAsHost;
+    public bool startAsClient;  // 新しいチェックボックス
 
     private float nextSyncTime;
     private bool isDirectorSet = true;
@@ -34,6 +35,10 @@ public class TimelineSync : NetworkBehaviour
         else if (startAsHost)
         {
             NetworkManager.singleton.StartHost();
+        }
+        else if (startAsClient)
+        {
+            NetworkManager.singleton.StartClient();  // クライアントとして起動
         }
     }
 
