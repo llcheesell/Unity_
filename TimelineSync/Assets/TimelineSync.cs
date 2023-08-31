@@ -6,81 +6,74 @@ public class TimelineSync : NetworkBehaviour
 {
     [Header("Settings")]
     public PlayableDirector director;
-    public float syncMasterInterval = 0.5f; // 0.5秒ごとに再生位置を同期
+    public float timelineSyncInterval = 0.5f;  // 名前を変更
+
+    [Header("Startup Options")]
+    public bool startAsServer;
+    public bool startAsHost;
 
     private float nextSyncTime;
-    private bool isDirectorSet = true; // PlayableDirectorがセットされているかのフラグ
+    private bool isDirectorSet = true;
 
     private void Start()
     {
-        // PlayableDirectorのチェック
         if (director == null)
         {
             Debug.LogWarning("PlayableDirector is not set on TimelineSync. Update process will be stopped.");
             isDirectorSet = false;
+            return;
+        }
+
+        // Network start options
+        if (isServer) return; // If already a server, skip the startup options
+
+        if (startAsServer)
+        {
+            NetworkManager.singleton.StartServer();
+        }
+        else if (startAsHost)
+        {
+            NetworkManager.singleton.StartHost();
         }
     }
 
     private void Update()
     {
-        // マスター側でのみ実行 & PlayableDirectorがセットされている場合のみ実行
-        if (!isServer || !isDirectorSet) return;
+        if (!isDirectorSet) return;
 
-        if (Time.time >= nextSyncTime)
+        if (isServer)
         {
-            nextSyncTime = Time.time + syncMasterInterval;
-            CmdSyncTimelinePosition((float)director.time);
+            if (Time.time >= nextSyncTime)
+            {
+                nextSyncTime = Time.time + timelineSyncInterval;  // 名前を変更
+                Debug.Log("Server: Sending sync signal.");  // サーバーとして同期信号を送信した時のログ
+                RpcSyncTimelinePosition((float)director.time);
+            }
+        }
+        else if (isClient)
+        {
+            // For clients, always sync at regular intervals
+            if (Time.time >= nextSyncTime)
+            {
+                nextSyncTime = Time.time + timelineSyncInterval;  // 名前を変更
+                CmdSyncTimelinePosition((float)director.time);
+            }
         }
     }
 
-    [Command]
-    public void CmdPlayTimeline()
-    {
-        director.Play();
-        RpcPlayTimeline();
-    }
 
-    [Command]
-    public void CmdPauseTimeline()
-    {
-        director.Pause();
-        RpcPauseTimeline();
-    }
-
-    [Command]
-    public void CmdStopTimeline()
-    {
-        director.Stop();
-        RpcStopTimeline();
-    }
-
+    // Commands (Client -> Server)
     [Command]
     private void CmdSyncTimelinePosition(float time)
     {
         RpcSyncTimelinePosition(time);
     }
 
+    // RPCs (Server -> Clients)
     [ClientRpc]
-    private void RpcPlayTimeline()
+    public void RpcSyncTimelinePosition(float time)
     {
-        director.Play();
-    }
-
-    [ClientRpc]
-    private void RpcPauseTimeline()
-    {
-        director.Pause();
-    }
-
-    [ClientRpc]
-    private void RpcStopTimeline()
-    {
-        director.Stop();
-    }
-
-    [ClientRpc]
-    private void RpcSyncTimelinePosition(float time)
-    {
+        Debug.Log("Client: Received sync signal.");  // クライアントとして同期信号を受信した時のログ
         director.time = time;
     }
 }
