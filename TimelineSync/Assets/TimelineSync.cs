@@ -11,7 +11,7 @@ public class TimelineSync : NetworkBehaviour
     [Header("Startup Options")]
     public bool startAsServer;
     public bool startAsHost;
-    public bool startAsClient;  // 新しいチェックボックス
+    public bool startAsClient;
 
     private float nextSyncTime;
     private bool isDirectorSet = true;
@@ -31,14 +31,17 @@ public class TimelineSync : NetworkBehaviour
         if (startAsServer)
         {
             NetworkManager.singleton.StartServer();
+            Debug.Log("Started as Server");
         }
         else if (startAsHost)
         {
             NetworkManager.singleton.StartHost();
+            Debug.Log("Started as Host");
         }
         else if (startAsClient)
         {
             NetworkManager.singleton.StartClient();  // クライアントとして起動
+            Debug.Log("Started as Client");
         }
     }
 
@@ -55,7 +58,7 @@ public class TimelineSync : NetworkBehaviour
                 RpcSyncTimelinePosition((float)director.time);
             }
         }
-        else if (isClient)
+        else if (startAsClient)
         {
             // For clients, always sync at regular intervals
             if (Time.time >= nextSyncTime)
